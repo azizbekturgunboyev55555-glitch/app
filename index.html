@@ -33,6 +33,17 @@ input.oi{width:100%;background:var(--card);color:var(--tx);border:2px solid var(
 .cell.done{background:var(--bt);color:#fff}.cell.flag{outline:3px solid var(--warn)}.cell.cur{border:2px solid var(--tx)}
 .sk{height:60px;border-radius:14px;background:var(--card);margin-bottom:10px;animation:p 1s infinite alternate}@keyframes p{to{opacity:.4}}
 .small{padding:8px 12px;width:auto;font-size:14px}
+
+.hero{background:linear-gradient(135deg,#3b5bdb,#4f7cff);color:#fff;border-radius:18px;padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.hero b{font-size:19px}.hero small{opacity:.85;display:block;margin-top:2px}
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.sc{background:var(--card);border-radius:16px;padding:14px 6px;text-align:center;font-size:13px;border:2px solid transparent}
+.sc.on{border-color:var(--bt);background:rgba(79,124,255,.18)}.sc i{display:block;font-style:normal;font-size:26px;margin-bottom:4px}
+.tg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tc{background:var(--card);border-radius:14px;padding:12px;display:flex;gap:10px;align-items:center}
+.tc em{font-style:normal;background:rgba(79,124,255,.2);color:var(--bt);border-radius:8px;min-width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.tc b{font-size:14px;display:block}.tc span{font-size:12px;color:var(--hint)}
+.fl{display:flex;gap:8px;overflow-x:auto;margin:14px 0 10px}
 </style></head><body>
 <div id="app"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
 <script>
@@ -55,12 +66,13 @@ fetch('questions.json?'+Date.now()).then(r=>r.json()).then(d=>{DB=d;
 
 function home(){
  clearInterval(timer);run=null;
- const s=DB.subjects[SUB];
- $.innerHTML=`<h1>Salom, ${esc(user.first_name||"do'st")}! 👋</h1><div class="hint">Testni tanlang, natija botga yuboriladi</div>
- <div class="card daily item" onclick="daily()"><div><b>📅 Kunlik 5 savol</b><div style="font-size:13px;opacity:.85">3 daqiqalik mashq, seriyani uzmang</div></div><div>🔥</div></div>
- <div class="chips">${DB.subjects.map((x,i)=>`<div class="chip ${i==SUB?'on':''}" onclick="SUB=${i};home()">${x.ic} ${x.name}</div>`).join('')}</div>
- ${s.tests.length?s.tests.map(t=>`<div class="card item" onclick="intro('${t.id}')"><span>${t.t}</span><span class="hint">${t.qs.length} savol · ${t.min} daq</span></div>`).join(''):'<div class="hint">Bu fanga hali test qo\'shilmagan.</div>'}
- <div style="display:flex;gap:8px;margin-top:14px"><button class="btn sec small" onclick="LS.theme=LS.theme==='light'?'':'light';document.body.classList.toggle('light')">🌓 Rejim</button>
+ const s=DB.subjects[SUB],all=tests().length,st=+LS.streak||0;
+ $.innerHTML=`<div class="hero"><div><b>Salom, ${esc(user.first_name||"do'st")}!</b><small>${DB.subjects.map(x=>x.name).join(' · ')} · ${all} ta test</small></div><div style="font-size:28px">🎓</div></div>
+ <div class="hero daily" style="background:linear-gradient(135deg,#4f7cff,#6b8cff);cursor:pointer" onclick="daily()"><div><b>📅 Kunlik 5 savol</b><small>3 daqiqalik mashq · seriyani uzmang</small></div><div style="background:rgba(255,255,255,.2);border-radius:12px;padding:6px 12px;font-weight:700">🔥 ${st}</div></div>
+ <div class="sg">${DB.subjects.map((x,i)=>`<div class="sc ${i==SUB?'on':''}" onclick="SUB=${i};home()"><i>${x.ic}</i><b>${x.name}</b><div class="hint">${x.tests.length} ta test</div></div>`).join('')}</div>
+ <div class="fl"><span class="chip on">Hammasi · ${s.tests.length}</span></div>
+ ${s.tests.length?`<div class="tg">${s.tests.map((t,i)=>`<div class="tc" onclick="intro('${t.id}')"><em>${i+1}</em><div><b>${t.t}</b><span>${t.qs.length} savol · ${t.min} daq</span></div></div>`).join('')}</div>`:'<div class="hint">Bu fanga hali test qo\'shilmagan.</div>'}
+ <div style="display:flex;gap:8px;margin-top:16px"><button class="btn sec small" onclick="LS.theme=LS.theme===\'light\'?\'\':\'light\';document.body.classList.toggle(\'light\')">🌓 Rejim</button>
  <button class="btn sec small" onclick="fs(1)">A+</button><button class="btn sec small" onclick="fs(-1)">A−</button></div>`}
 function fs(d){const v=Math.max(14,Math.min(24,(+LS.fs||17)+d));LS.fs=v;document.documentElement.style.setProperty('--fs',v+'px')}
 
@@ -105,6 +117,7 @@ function send(){
  clearInterval(timer);
  const p={t:run.id,a:run.ans,s:Math.round((Date.now()-run.start)/1000)};if(run.ids)p.ids=run.ids;
  LS.removeItem('sess');
+ if(run.id==='daily'){const d=new Date().toISOString().slice(0,10),y=new Date(Date.now()-864e5).toISOString().slice(0,10);if(LS.dday!==d){LS.streak=(LS.dday===y?(+LS.streak||0):0)+1;LS.dday=d}}
  if(!tg.initData){$.innerHTML='<h1>Natija yuborilmadi</h1><div class="hint">Mini App\'ni botdagi «📝 Testlar» tugmasi orqali oching.</div>';return}
  $.innerHTML='<h1>Yuborilmoqda…</h1>';
  try{tg.sendData(JSON.stringify(p))}catch(e){$.innerHTML='<h1>Xatolik</h1><div class="hint">Botdagi «📝 Testlar» tugmasi orqali oching.</div>'}}
